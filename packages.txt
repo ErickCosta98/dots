@@ -1,0 +1,32 @@
+# PACMAN
+stow
+fish
+starship
+neovim
+git
+base-devel
+curl
+wget
+ripgrep
+fd
+fzf
+bat
+eza
+zoxide
+mise
+atuin
+btop
+lazygit
+lazydocker
+tmux
+zellij
+yay
+
+# AUR
+fisher
+ghostty
+walker-bin
+voxtype-bin
+spotify-player
+swayosd-git
+nvm
