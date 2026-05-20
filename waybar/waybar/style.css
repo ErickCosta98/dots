@@ -1,0 +1,206 @@
+@import "../omarchy/current/theme/waybar.css";
+
+* {
+  background-color: transparent;
+  color: @foreground;
+
+  border: none;
+  border-radius: 0;
+  min-height: 0;
+  font-family: "FiraCode Nerd Font Mono";
+  font-size: 20px;
+}
+
+.modules-left {
+  margin-left: 8px;
+}
+
+.modules-right {
+  margin-right: 8px;
+}
+
+.modules-left,
+.modules-right,
+.modules-center {
+  background-color: @background;
+  border-radius: 25px;
+  border: 1px solid #44475a;
+  padding: 0 5px;
+}
+
+#workspaces button {
+  all: initial;
+  padding: 0 6px;
+  margin: 0 1.5px;
+  min-width: 9px;
+}
+
+#workspaces button.empty {
+  opacity: 0.5;
+}
+
+#tray,
+#cpu,
+#battery,
+#network,
+#bluetooth,
+#pulseaudio,
+#custom-omarchy,
+#custom-ghostty,
+#custom-alacritty-ssh,
+#custom-expand-ip-local-icon,
+#custom-expand-ip-public-icon {
+  margin: 0 5px;
+}
+
+
+#custom-expand-ip-local-icon {
+  font-size: 25px;
+}
+
+#custom-expand-ip-public-icon {
+  font-size: 20px;
+}
+
+#custom-alacritty-ssh {
+  font-size: 26px;
+}
+
+#custom-update {
+  min-width: 12px;
+  margin: 0 7.5px;
+}
+
+#custom-public_ip.ip-public {
+  padding: 0 5px;
+  /* border: 1px solid #44475a; */
+  border-radius: 25px;
+}
+
+#custom-public_ip.ip-public:hover {
+  background-color: #202025;
+  color: #ffffff;
+}
+
+#custom-public_ip.ip-error {
+  color: #ff5555;
+}
+
+#custom-ip-local {
+  padding: 0 2px;
+  color: #ffffff;
+  /* border: 1px solid #44475a;  */
+  border-radius: 25px;
+}
+
+#custom-ip-local:hover {
+  background-color: #202025;
+}
+
+#custom-ip-local.ip-error {
+  color: #ff5555;
+}
+
+/* Base */
+#custom-weather {
+  padding: 0 10px;
+  font-weight: bold;
+}
+
+/* Temperatura */
+#custom-weather.hot {
+  color: #ff5e57;
+}
+
+/* rojo */
+#custom-weather.warm {
+  color: #ffb86c;
+}
+
+/* naranja */
+#custom-weather.cool {
+  color: #8be9fd;
+}
+
+/* azul claro */
+#custom-weather.cold {
+  color: #5dade2;
+}
+
+/* azul frío */
+
+/* Clima */
+#custom-weather.clear {
+  color: #f1fa8c;
+}
+
+/* amarillo sol */
+#custom-weather.cloudy {
+  color: #cfd8dc;
+}
+
+#custom-weather.rain {
+  color: #81d4fa;
+}
+
+#custom-weather.storm {
+  color: #bd93f9;
+}
+
+#custom-weather.snow {
+  color: #ffffff;
+}
+
+#custom-weather.fog {
+  color: #b0bec5;
+}
+
+#custom-expand-icon {
+  margin-right: 0px;
+}
+
+tooltip {
+  padding: 2px;
+  background-color: @background;
+}
+
+#custom-update {
+  font-size: 10px;
+}
+
+#clock {
+  margin-left: 5px;
+  margin-right: 8.75px;
+}
+
+.hidden {
+  opacity: 0;
+}
+
+
+#custom-screenrecording-indicator,
+#custom-idle-indicator,
+#custom-notification-silencing-indicator {
+  min-width: 12px;
+  margin-left: 5px;
+  margin-right: 0;
+  font-size: 10px;
+  padding-bottom: 1px;
+}
+
+#custom-screenrecording-indicator.active {
+  color: #a55555;
+}
+
+#custom-voxtype {
+  min-width: 12px;
+  margin: 0 0 0 7.5px;
+}
+
+#custom-voxtype.recording {
+  color: #a55555;
+}
+#custom-idle-indicator.active,
+#custom-notification-silencing-indicator.active {
+  color: #a55555;
+}

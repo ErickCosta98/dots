@@ -1,0 +1,4 @@
+\.bak$
+\.bak\.\d+$
+^\.atl$
+^\.calendar-url$
