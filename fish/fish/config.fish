@@ -159,4 +159,5 @@ end
 # pnpm end
 #
 fish_add_path $HOME/.local/bin
+fish_add_path $HOME/.cache/.bun/bin
 #eval (~/.local/try.rb init ~/src/tries | string collect)
