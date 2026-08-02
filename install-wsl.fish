@@ -5,13 +5,13 @@
 # won't propagate back to the repo.
 # Invoked via install-wsl.sh, which installs the bash-only prerequisites first.
 
-set -l GREEN  (set_color green)
-set -l YELLOW (set_color yellow)
-set -l RED    (set_color red)
-set -l BOLD   (set_color --bold)
-set -l RESET  (set_color normal)
+set -g GREEN  (set_color green)
+set -g YELLOW (set_color yellow)
+set -g RED    (set_color red)
+set -g BOLD   (set_color --bold)
+set -g RESET  (set_color normal)
 
-set -l DOTS_DIR $HOME/Work/dots
+set -g DOTS_DIR $HOME/Work/dots
 
 function info
     printf '%s[info]%s  %s\n' $GREEN $RESET "$argv"
