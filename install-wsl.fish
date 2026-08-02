@@ -12,15 +12,15 @@ set -l RESET  (set_color normal)
 set -l DOTS_DIR $HOME/Work/dots
 
 function info
-    echo "$GREEN[info]$RESET  $argv"
+    printf '%s[info]%s  %s\n' $GREEN $RESET "$argv"
 end
 
 function warn
-    echo "$YELLOW[warn]$RESET  $argv"
+    printf '%s[warn]%s  %s\n' $YELLOW $RESET "$argv"
 end
 
 function error
-    echo "$RED[error]$RESET $argv" >&2
+    printf '%s[error]%s %s\n' $RED $RESET "$argv" >&2
 end
 
 function stow_packages
