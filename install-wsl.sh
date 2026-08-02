@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # dots/install-wsl.sh — bootstrap for WSL (Arch Linux): installs bash-only
 # prerequisites (fish itself isn't installed yet, so this can't be a fish
-# script), then hands off to install-wsl.fish for stowing/config.
+# script), then hands off to install-wsl.fish for copying config files.
 set -euo pipefail
 
 DOTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -31,7 +31,7 @@ sudo pacman -Sy
 
 info "Installing base packages via ${PKG_INSTALL[0]}..."
 "${PKG_INSTALL[@]}" \
-    fish stow git curl wget base-devel \
+    fish git curl wget base-devel \
     ripgrep fd fzf bat unzip neovim
 
 if ! command -v starship >/dev/null 2>&1; then

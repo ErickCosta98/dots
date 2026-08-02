@@ -1,6 +1,8 @@
 #!/usr/bin/env fish
-# dots/install-wsl.fish — restores terminal-only config (fish, starship, nvim,
-# mise, atuin) on WSL. No Hyprland/Waybar/Omarchy — desktop packages excluded.
+# dots/install-wsl.fish — copies terminal-only config (fish, starship, nvim,
+# mise, atuin) into ~/.config/ on WSL. No Hyprland/Waybar/Omarchy — desktop
+# packages excluded. Files are copied, not symlinked — edits under ~/.config/
+# won't propagate back to the repo.
 # Invoked via install-wsl.sh, which installs the bash-only prerequisites first.
 
 set -l GREEN  (set_color green)
@@ -23,27 +25,28 @@ function error
     printf '%s[error]%s %s\n' $RED $RESET "$argv" >&2
 end
 
-function stow_packages
-    info "Stowing terminal packages into ~/.config/..."
+function copy_packages
+    info "Copying terminal packages into ~/.config/..."
 
     set -l packages fish starship nvim mise atuin
 
     for pkg in $packages
-        set -l pkg_dir $DOTS_DIR/$pkg
-        if not test -d $pkg_dir
-            warn "Package directory not found: $pkg_dir — skipping."
+        set -l pkg_src $DOTS_DIR/$pkg/$pkg
+        if not test -d $pkg_src
+            warn "Package directory not found: $pkg_src — skipping."
             continue
         end
 
-        info "Stowing $pkg..."
-        stow --target=$HOME/.config --restow --dir=$DOTS_DIR $pkg
+        info "Copying $pkg..."
+        mkdir -p $HOME/.config/$pkg
+        cp -rT $pkg_src $HOME/.config/$pkg
         or begin
-            error "Failed to stow package: $pkg"
+            error "Failed to copy package: $pkg"
             return 1
         end
     end
 
-    info "Terminal packages stowed."
+    info "Terminal packages copied."
 end
 
 function install_fisher
@@ -109,7 +112,7 @@ if not test -d $DOTS_DIR/.git
     exit 1
 end
 
-stow_packages
+copy_packages
 or exit 1
 
 install_fisher
