@@ -38,8 +38,12 @@ function copy_packages
         end
 
         info "Copying $pkg..."
-        mkdir -p $HOME/.config/$pkg
-        cp -rT $pkg_src $HOME/.config/$pkg
+        set -l pkg_dst $HOME/.config/$pkg
+        # Wipe the destination first: a prior stow run may have left symlinks
+        # to the repo nested inside, which would make cp a no-op or error.
+        rm -rf $pkg_dst
+        mkdir -p $pkg_dst
+        cp -rT $pkg_src $pkg_dst
         or begin
             error "Failed to copy package: $pkg"
             return 1
