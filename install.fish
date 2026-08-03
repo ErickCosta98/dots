@@ -196,6 +196,14 @@ function copy_packages
         return 1
     end
 
+    # xdg-terminals.list lives at ~/.config/xdg-terminals.list, not a subdirectory.
+    info "Copying xdg-terminals..."
+    run cp $DOTS_DIR/xdg-terminals/xdg-terminals.list $HOME/.config/xdg-terminals.list
+    or begin
+        error "Failed to copy package: xdg-terminals"
+        return 1
+    end
+
     info "All packages copied."
 end
 

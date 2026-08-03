@@ -95,6 +95,7 @@ Open `~/.config/hypr/monitors.conf` and adjust monitor layout for your hardware.
 | `btop` | `~/.config/btop/` | System resource monitor |
 | `swayosd` | `~/.config/swayosd/` | On-screen display for volume/brightness |
 | `spotify-player` | `~/.config/spotify-player/` | Terminal Spotify client |
+| `xdg-terminals` | `~/.config/xdg-terminals.list` | Default terminal preference for `xdg-terminal-exec` (single file) |
 | `tmux` | `~/.config/tmux/` | Terminal multiplexer |
 | `zellij` | `~/.config/zellij/` | Terminal multiplexer (layouts included) |
 
