@@ -17,7 +17,6 @@ jdk17-openjdk
 jre8-openjdk
 yq
 mariadb-clients
-ngrok
 mitmproxy
 composer
 php
@@ -26,6 +25,7 @@ php-sqlite
 # AUR
 opencode
 claude-code
+ngrok
 fisher
 ghostty
 walker-bin
