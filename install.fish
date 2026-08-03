@@ -3,37 +3,37 @@
 # Usage: fish install.fish [--dry-run]
 
 # ── Color palette ──────────────────────────────────────────────────────────────
-set -l GREEN  (set_color green)
-set -l YELLOW (set_color yellow)
-set -l RED    (set_color red)
-set -l BOLD   (set_color --bold)
-set -l RESET  (set_color normal)
+set -g GREEN  (set_color green)
+set -g YELLOW (set_color yellow)
+set -g RED    (set_color red)
+set -g BOLD   (set_color --bold)
+set -g RESET  (set_color normal)
 
 # ── Flags ──────────────────────────────────────────────────────────────────────
-set -l DRY_RUN false
+set -g DRY_RUN false
 if contains -- --dry-run $argv
     set DRY_RUN true
-    echo "$YELLOW[dry-run]$RESET No changes will be made — commands are printed only."
+    echo $YELLOW"[dry-run]"$RESET" No changes will be made — commands are printed only."
 end
 
-set -l DOTS_DIR $HOME/Work/dots
+set -g DOTS_DIR $HOME/Work/dots
 
 # ── Helper functions ───────────────────────────────────────────────────────────
 function info
-    echo "$GREEN[info]$RESET  $argv"
+    echo $GREEN"[info]"$RESET"  $argv"
 end
 
 function warn
-    echo "$YELLOW[warn]$RESET  $argv"
+    echo $YELLOW"[warn]"$RESET"  $argv"
 end
 
 function error
-    echo "$RED[error]$RESET $argv" >&2
+    echo $RED"[error]"$RESET" $argv" >&2
 end
 
 function run
     if test $DRY_RUN = true
-        echo "$YELLOW[dry-run]$RESET $argv"
+        echo $YELLOW"[dry-run]"$RESET" $argv"
     else
         eval $argv
         or begin
@@ -51,11 +51,6 @@ function check_prerequisites
         error "omarchy is not installed."
         error "Install it from: https://omarchy.dev"
         error "Run the Omarchy install script, then re-run this script."
-        return 1
-    end
-
-    if not command -q stow
-        error "stow is not installed. Run: sudo pacman -S stow"
         return 1
     end
 
@@ -152,56 +147,56 @@ function clone_repo
     info "Repository cloned to $DOTS_DIR."
 end
 
-# ── 4. backup_conflicts ────────────────────────────────────────────────────────
-function backup_conflicts -a pkg
-    set -l timestamp (date +%s)
-    set -l conflicts (stow --target=$HOME/.config --simulate --restow --dir=$DOTS_DIR $pkg 2>&1 | grep -i 'CONFLICT\|existing target\|already exists')
-
-    if test -z "$conflicts"
-        return 0
-    end
-
-    warn "Conflicts found in package '$pkg' — backing up originals..."
-    for line in $conflicts
-        # Extract the conflicting target path from stow output
-        set -l target_path (echo $line | grep -oP '(?<=existing target is )[^\s]+' | head -1)
-        if test -n "$target_path"
-            set -l full_path $HOME/.config/$target_path
-            if test -e $full_path
-                run mv $full_path $full_path.dotbak.$timestamp
-                warn "Backed up: $full_path -> $full_path.dotbak.$timestamp"
-            end
-        end
-    end
-end
-
-# ── 5. stow_packages ──────────────────────────────────────────────────────────
-function stow_packages
-    info "Stowing all packages into ~/.config/..."
+# ── 4. copy_packages ──────────────────────────────────────────────────────────
+function copy_packages
+    info "Copying all packages into ~/.config/..."
 
     set -l packages \
         aether nvim fish hypr waybar \
         ghostty alacritty walker voxtype \
-        mise atuin starship 1password \
-        btop swayosd spotify-player
+        mise atuin \
+        btop swayosd spotify-player \
+        tmux zellij
 
     for pkg in $packages
-        set -l pkg_dir $DOTS_DIR/$pkg
-        if not test -d $pkg_dir
-            warn "Package directory not found: $pkg_dir — skipping."
+        set -l pkg_src $DOTS_DIR/$pkg/$pkg
+        if not test -d $pkg_src
+            warn "Package directory not found: $pkg_src — skipping."
             continue
         end
 
-        info "Stowing $pkg..."
-        backup_conflicts $pkg
-        run stow --target=$HOME/.config --restow --dir=$DOTS_DIR $pkg
+        info "Copying $pkg..."
+        set -l pkg_dst $HOME/.config/$pkg
+        # Wipe the destination first: a prior stow run may have left symlinks
+        # to the repo nested inside, which would make cp a no-op or error.
+        run rm -rf $pkg_dst
+        run mkdir -p $pkg_dst
+        run cp -rT $pkg_src $pkg_dst
         or begin
-            error "Failed to stow package: $pkg"
+            error "Failed to copy package: $pkg"
             return 1
         end
     end
 
-    info "All packages stowed."
+    # starship.toml lives at ~/.config/starship.toml, not a subdirectory.
+    info "Copying starship..."
+    run cp $DOTS_DIR/starship/starship.toml $HOME/.config/starship.toml
+    or begin
+        error "Failed to copy package: starship"
+        return 1
+    end
+
+    # 1Password only tracks ssh/agent.toml, under a capitalized directory name.
+    info "Copying 1password..."
+    run rm -rf $HOME/.config/1Password/ssh
+    run mkdir -p $HOME/.config/1Password/ssh
+    run cp -rT $DOTS_DIR/1password/1Password/ssh $HOME/.config/1Password/ssh
+    or begin
+        error "Failed to copy package: 1password"
+        return 1
+    end
+
+    info "All packages copied."
 end
 
 # ── 6. install_fisher ─────────────────────────────────────────────────────────
@@ -235,6 +230,26 @@ function run_mise
     info "mise install complete."
 end
 
+# ── 7b. install_npm_globals ────────────────────────────────────────────────────
+function install_npm_globals
+    info "Installing global npm packages..."
+
+    if not command -q npm
+        error "npm is not installed. It should have been installed via mise."
+        return 1
+    end
+
+    set -l npm_pkgs \
+        @colbymchenry/codegraph \
+        eas-cli \
+        @benborla29/mcp-server-mysql
+
+    run npm install -g $npm_pkgs
+    or return 1
+
+    info "Global npm packages installed."
+end
+
 # ── 8. activate_theme ─────────────────────────────────────────────────────────
 function activate_theme
     info "Activating aether theme via Omarchy..."
@@ -260,7 +275,7 @@ function configure_secrets
         read -l -P "Enter your calendar ICS URL (leave blank to skip): " cal_url
         if test -n "$cal_url"
             if test $DRY_RUN = true
-                echo "$YELLOW[dry-run]$RESET Would write .calendar-url: $cal_url"
+                echo $YELLOW"[dry-run]"$RESET" Would write .calendar-url: $cal_url"
             else
                 echo $cal_url > $cal_real
                 info "Written: $cal_real"
@@ -281,7 +296,7 @@ function configure_secrets
         read -l -P "Enter your wallhaven API key (leave blank to skip): " wh_key
         if test -n "$wh_key"
             if test $DRY_RUN = true
-                echo "$YELLOW[dry-run]$RESET Would write wallhaven.json with apiKey: $wh_key"
+                echo $YELLOW"[dry-run]"$RESET" Would write wallhaven.json with apiKey: $wh_key"
             else
                 # Write full JSON structure with provided key
                 echo "{
@@ -364,13 +379,16 @@ or exit 1
 clone_repo
 or exit 1
 
-stow_packages
+copy_packages
 or exit 1
 
 install_fisher
 or exit 1
 
 run_mise
+or exit 1
+
+install_npm_globals
 or exit 1
 
 activate_theme

@@ -5,8 +5,9 @@ Personal dotfiles for Arch Linux + Omarchy + Hyprland.
 ## What this is
 
 Version-controlled configuration files for a full desktop environment built on
-Arch Linux, managed with [GNU Stow](https://www.gnu.org/software/stow/) for
-symlink management and [Omarchy](https://omarchy.dev) as the theming layer.
+Arch Linux, using [Omarchy](https://omarchy.dev) as the theming layer. Configs
+are copied (not symlinked) into `~/.config/`, so edits made there won't
+propagate back to the repo automatically — commit changes explicitly.
 
 Running `fish install.fish` on a fresh Arch + Omarchy machine restores the
 complete environment in one step.
@@ -20,7 +21,6 @@ Before cloning and running the install script:
 1. **Arch Linux** installed and booted
 2. **Omarchy** installed: follow instructions at https://omarchy.dev
 3. **yay** (AUR helper) available in PATH
-4. **stow** installed: `sudo pacman -S stow`
 
 The install script will handle everything else.
 
@@ -58,11 +58,12 @@ fish install.fish
 ```
 
 The script will:
-- Verify prerequisites (omarchy, stow, yay)
+- Verify prerequisites (omarchy, yay)
 - Install all packages from `packages.txt`
-- Stow all config packages into `~/.config/`
+- Copy all config packages into `~/.config/`
 - Install Fisher plugins from `fishfile`
 - Run `mise install` to restore tool runtimes
+- Install global npm packages (codegraph, eas-cli, mcp-server-mysql)
 - Activate the `aether` theme via Omarchy
 - Prompt you for secrets (calendar URL, wallhaven API key)
 - Warn you about `monitors.conf` (machine-specific — edit before rebooting)
@@ -94,6 +95,8 @@ Open `~/.config/hypr/monitors.conf` and adjust monitor layout for your hardware.
 | `btop` | `~/.config/btop/` | System resource monitor |
 | `swayosd` | `~/.config/swayosd/` | On-screen display for volume/brightness |
 | `spotify-player` | `~/.config/spotify-player/` | Terminal Spotify client |
+| `tmux` | `~/.config/tmux/` | Terminal multiplexer |
+| `zellij` | `~/.config/zellij/` | Terminal multiplexer (layouts included) |
 
 ---
 
@@ -143,35 +146,34 @@ The install script will open this file for review before finishing.
 ```fish
 cd ~/Work/dots
 git pull
-# Re-stow any changed packages:
-stow --target=$HOME/.config --restow --dir=$HOME/Work/dots <package>
+# Re-copy any changed packages:
+rm -rf ~/.config/<package> && cp -rT ~/Work/dots/<package>/<package> ~/.config/<package>
 ```
 
 ### Add a new config to the repo
 
 ```fish
-# 1. Create the stow package directory tree
+# 1. Create the package directory tree
 mkdir -p ~/Work/dots/<package>/<package>/
 
-# 2. Copy (or move) config files into it
+# 2. Copy config files into it
 cp -r ~/.config/<path>/* ~/Work/dots/<package>/<package>/
 
-# 3. Stow the package (creates symlinks)
-stow --target=$HOME/.config --restow --dir=$HOME/Work/dots <package>
+# 3. Add the package name to the copy loop in install.fish
 
-# 4. Add the package name to the stow loop in install.fish
-
-# 5. Commit
+# 4. Commit
 cd ~/Work/dots && git add <package>/ install.fish
 git commit -m "feat: add <config>"
 ```
 
 ### Update dotfiles after editing a config
 
-Since configs are symlinked from the repo, edits to `~/.config/<path>` are
-immediately reflected in `~/Work/dots`. Just commit:
+Since configs are **copied**, not symlinked, edits to `~/.config/<path>` do
+**not** propagate back to `~/Work/dots` automatically. Copy the changed files
+back into the repo, then commit:
 
 ```fish
+cp -r ~/.config/<package>/* ~/Work/dots/<package>/<package>/
 cd ~/Work/dots
 git add -p
 git commit -m "chore: update <what-you-changed>"

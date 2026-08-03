@@ -1,28 +1,31 @@
 # PACMAN
-stow
+# Note: packages already installed by Omarchy's base install
+# (~/.local/share/omarchy/install/omarchy-base.packages and omarchy-other.packages)
+# are intentionally excluded here — see that file as the source of truth for
+# what a stock Omarchy system already provides.
 fish
-starship
-neovim
-git
-base-devel
 curl
 wget
-ripgrep
-fd
-fzf
-bat
-eza
-zoxide
-mise
 atuin
-btop
-lazygit
-lazydocker
-tmux
 zellij
-yay
+
+# Development
+# (docker, rust, ruby, clang, llvm, github-cli, jq, tree-sitter-cli,
+# postgresql-libs, python-poetry-core, jdk-openjdk, etc. already come with Omarchy)
+go
+jdk17-openjdk
+jre8-openjdk
+yq
+mariadb-clients
+ngrok
+mitmproxy
+composer
+php
+php-sqlite
 
 # AUR
+opencode
+claude-code
 fisher
 ghostty
 walker-bin
@@ -30,3 +33,73 @@ voxtype-bin
 spotify-player
 swayosd-git
 nvm
+brave-bin
+android-studio
+bruno-bin
+dbeaver-ce-bin
+mongodb-compass-bin
+postman-bin
+sonar-scanner
+sdkman-bin
+php74
+php74-apache
+php74-cgi
+php74-cli
+php74-curl
+php74-dom
+php74-exif
+php74-fileinfo
+php74-fpm
+php74-gd
+php74-gmp
+php74-igbinary
+php74-imagick
+php74-imap
+php74-json
+php74-mbstring
+php74-mcrypt
+php74-mysql
+php74-openssl
+php74-pdo
+php74-pecl
+php74-phar
+php74-simplexml
+php74-soap
+php74-sodium
+php74-tokenizer
+php74-xml
+php74-xmlreader
+php74-xmlwriter
+php74-xsl
+php74-zip
+php84
+php84-apache
+php84-bcmath
+php84-cgi
+php84-cli
+php84-curl
+php84-dom
+php84-ffi
+php84-fileinfo
+php84-fpm
+php84-ftp
+php84-gd
+php84-gmp
+php84-iconv
+php84-imagick
+php84-mbstring
+php84-mysql
+php84-openssl
+php84-pdo
+php84-phar
+php84-shmop
+php84-simplexml
+php84-soap
+php84-sockets
+php84-sodium
+php84-tokenizer
+php84-xml
+php84-xmlreader
+php84-xmlwriter
+php84-xsl
+php84-zip
