@@ -142,14 +142,42 @@ The install script will open this file for review before finishing.
 
 ## Day-2 Operations
 
-### Pull changes from another machine
+### Pull changes from another machine (recommended: migrations)
+
+On a machine that's already fully set up, don't re-run `install.fish` — it
+reinstalls every package and recopies every config from scratch. Instead use
+`migrate.fish`, which only applies changes that are actually new:
 
 ```fish
 cd ~/Work/dots
 git pull
-# Re-copy any changed packages:
-rm -rf ~/.config/<package> && cp -rT ~/Work/dots/<package>/<package> ~/.config/<package>
+fish migrate.fish              # runs any pending migrations
+fish migrate.fish --dry-run    # preview what would run, without running it
 ```
+
+Each migration is a small `migrations/<unix-timestamp>.fish` script (same
+pattern Omarchy itself uses). Applied migrations are tracked in
+`~/.local/state/dots/migrations/` so they never run twice. If a migration
+fails, you're prompted to skip it (and it's recorded under `.../skipped/`) or
+abort.
+
+`install.fish` runs a full bootstrap and, at the end, marks every existing
+migration as already applied (`fish migrate.fish --baseline`) — a fresh
+install already has the latest state, so there's nothing left to migrate.
+
+#### Creating a new migration
+
+When you change a config in a way that needs an action on other machines
+(not just a file copy that `install.fish` would already handle on next full
+run), add a migration instead of documenting a manual step:
+
+```fish
+fish migrate.fish --new "short description of the change"
+```
+
+This scaffolds `migrations/<timestamp>.fish` and opens it in `$EDITOR`. Write
+whatever's needed (copy specific files, restart a service, run a one-off
+command) — see `migrations/*.fish` for examples.
 
 ### Add a new config to the repo
 

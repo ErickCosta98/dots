@@ -377,6 +377,12 @@ function sync_neovim
     info "Neovim sync complete."
 end
 
+# ── 12. baseline_migrations ────────────────────────────────────────────────────
+function baseline_migrations
+    info "Marking existing migrations as already applied (fresh install already has them)..."
+    run fish $DOTS_DIR/migrate.fish --baseline
+end
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 check_prerequisites
 or exit 1
@@ -408,6 +414,9 @@ or exit 1
 warn_monitors
 
 sync_neovim
+or exit 1
+
+baseline_migrations
 or exit 1
 
 echo ""
