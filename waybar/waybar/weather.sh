@@ -1,10 +1,33 @@
 #!/usr/bin/env bash
-# weather.sh - Clima para waybar usando Open-Meteo (mismo proveedor que stormy)
-# Ciudad: San Cristóbal de las Casas, Chiapas, México
+# weather.sh - Clima para waybar usando Open-Meteo
+#
+# Ubicación: por defecto se geolocaliza por IP pública (ip-api.com). Para
+# fijar una ciudad manualmente (ej. si la IP resuelve a otra ciudad por VPN),
+# descomentá un bloque NAME/LAT/LON en weather-location.conf.
 
-# Coordenadas de San Cristóbal de las Casas
-LAT="16.7370"
-LON="-92.6376"
+LOCATION_CONF="$HOME/.config/waybar/weather-location.conf"
+NAME=""
+LAT=""
+LON=""
+
+if [ -f "$LOCATION_CONF" ]; then
+  # shellcheck disable=SC1090
+  source <(grep -E '^(NAME|LAT|LON)=' "$LOCATION_CONF" | head -3)
+fi
+
+if [ -z "$LAT" ] || [ -z "$LON" ]; then
+  GEO=$(curl -sf --max-time 5 "http://ip-api.com/json/?fields=status,lat,lon,city")
+  if [ "$(echo "$GEO" | jq -r '.status // "fail"')" = "success" ]; then
+    LAT=$(echo "$GEO" | jq -r '.lat')
+    LON=$(echo "$GEO" | jq -r '.lon')
+    NAME=$(echo "$GEO" | jq -r '.city')
+  fi
+fi
+
+if [ -z "$LAT" ] || [ -z "$LON" ]; then
+  echo '{"text":"  --°C", "tooltip":"Sin ubicación disponible", "class":"weather-error"}'
+  exit 0
+fi
 
 # Iconos Nerd Font (monocromáticos)
 get_icon() {
@@ -102,7 +125,7 @@ TOOLTIP="${ICON}  ${DESC}\n\
   Temperatura: ${TEMP}°C\n\
   Humedad: ${HUMIDITY}%\n\
   Viento: ${WIND} km/h\n\
-  San Cristóbal de las Casas"
+  ${NAME:-Ubicación desconocida}"
 
 printf '{"text":"%s", "tooltip":"%s", "class":"weather %s %s"}' \
 "$TEXT" "$TOOLTIP" "$TEMP_CLASS" "$WEATHER_CLASS"

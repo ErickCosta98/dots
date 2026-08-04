@@ -19,6 +19,8 @@
     "custom/update",
     "custom/screenrecording-indicator",
     "custom/voxtype",
+    "custom/idle-indicator",
+    "custom/notification-silencing-indicator",
   ],
   "modules-right": [
     "group/tray-expander",
