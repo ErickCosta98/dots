@@ -416,7 +416,25 @@ function sync_neovim
     info "Neovim sync complete."
 end
 
-# ── 12. baseline_migrations ────────────────────────────────────────────────────
+# ── 12. set_default_shell ──────────────────────────────────────────────────────
+function set_default_shell
+    set -l fish_path (command -v fish)
+    if test "$SHELL" != "$fish_path"
+        warn "Default shell is not fish."
+        if test $DRY_RUN = true
+            echo $YELLOW"[dry-run]"$RESET" Would prompt to set fish ($fish_path) as your default shell."
+            return 0
+        end
+        read -l -P "Set fish ($fish_path) as your default shell? [y/N] " answer
+        if string match -qi 'y' $answer
+            run chsh -s $fish_path
+        end
+    else
+        info "fish is already your default shell."
+    end
+end
+
+# ── 13. baseline_migrations ────────────────────────────────────────────────────
 function baseline_migrations
     info "Marking existing migrations as already applied (fresh install already has them)..."
     run fish $DOTS_DIR/migrate.fish --baseline
@@ -454,6 +472,8 @@ configure_monitors
 
 sync_neovim
 or exit 1
+
+set_default_shell
 
 baseline_migrations
 or exit 1
