@@ -66,7 +66,7 @@ The script will:
 - Install global npm packages (codegraph, eas-cli, mcp-server-mysql)
 - Activate the `aether` theme via Omarchy
 - Prompt you for secrets (calendar URL, wallhaven API key)
-- Warn you about `monitors.conf` (machine-specific — edit before rebooting)
+- Auto-generate `monitors.conf` from this machine's actually detected monitors
 - Run a headless Neovim sync to install all plugins
 
 ### 4. Configure machine-specific settings
@@ -129,14 +129,27 @@ See template: `aether/aether/wallhaven.json.sample`
 
 ## Machine-Specific: monitors.conf
 
-`hypr/hypr/monitors.conf` is tracked in this repository so it is not lost,
-but it is **machine-specific** — monitor names, resolutions, and positions will
-differ between machines.
+`hypr/hypr/monitors.conf` is tracked in this repository, but it's
+**machine-specific** — monitor names, resolutions, and positions differ
+between machines. Copying the file as-is from another laptop is what breaks
+your layout on new hardware.
 
-After restoring on new hardware, edit `~/.config/hypr/monitors.conf` to match
-your monitor layout before rebooting into Hyprland.
+`install.fish` handles this automatically: `generate-monitors.fish` runs
+`hyprctl monitors -j` and regenerates `~/.config/hypr/monitors.conf` for
+whatever this machine actually has connected, laying out monitors
+left-to-right in detection order at their preferred resolution/refresh/scale.
 
-The install script will open this file for review before finishing.
+Run it manually any time your monitor setup changes (new laptop, new external
+display, docking/undocking):
+
+```fish
+fish ~/Work/dots/generate-monitors.fish              # write it
+fish ~/Work/dots/generate-monitors.fish --dry-run    # preview without writing
+```
+
+If you want a non-default arrangement (e.g. an external monitor above/below
+instead of beside the laptop screen), edit `~/.config/hypr/monitors.conf` by
+hand afterward — it won't be touched again until you re-run the generator.
 
 ---
 

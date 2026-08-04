@@ -355,8 +355,8 @@ function configure_secrets
     info "Secrets configuration complete."
 end
 
-# ── 10. warn_monitors ─────────────────────────────────────────────────────────
-function warn_monitors
+# ── 10. configure_monitors ─────────────────────────────────────────────────────
+function configure_monitors
     set -l monitors_conf $HOME/.config/hypr/monitors.conf
 
     echo ""
@@ -364,23 +364,33 @@ function warn_monitors
     echo "$YELLOW$BOLD║          MONITORS.CONF IS MACHINE-SPECIFIC          ║$RESET"
     echo "$YELLOW$BOLD╚══════════════════════════════════════════════════════╝$RESET"
     echo ""
-    warn "monitors.conf contains monitor names, resolutions, and positions"
-    warn "that are specific to this machine's hardware."
-    warn "You MUST edit it for new hardware before rebooting into Hyprland."
-    echo ""
 
+    if command -q hyprctl
+        info "Generating monitors.conf from this machine's detected hardware..."
+        run fish $DOTS_DIR/generate-monitors.fish
+        or warn "Auto-generation failed — the copied monitors.conf (from wherever it came from) is still in place below."
+    else
+        warn "hyprctl not available (not running inside Hyprland yet) — cannot auto-detect monitors."
+        warn "Re-run: fish $DOTS_DIR/generate-monitors.fish   (from inside Hyprland, once logged in)"
+    end
+
+    echo ""
     if test -f $monitors_conf
         echo "$BOLD--- Current monitors.conf ---$RESET"
         cat $monitors_conf
         echo "$BOLD----------------------------$RESET"
-        echo ""
+    else
+        warn "No monitors.conf found."
     end
+    echo ""
+    warn "If you have multiple monitors and want a different arrangement than"
+    warn "left-to-right in detection order, edit $monitors_conf by hand."
 
     if test $DRY_RUN = false
         if test -n "$EDITOR"
             read -l -P "Open monitors.conf in $EDITOR? [y/N] " answer
             if string match -qi 'y' $answer
-                eval $EDITOR $monitors_conf
+                $EDITOR $monitors_conf
             end
         else
             warn "\$EDITOR is not set. Edit manually: $monitors_conf"
@@ -440,7 +450,7 @@ or exit 1
 configure_secrets
 or exit 1
 
-warn_monitors
+configure_monitors
 
 sync_neovim
 or exit 1
