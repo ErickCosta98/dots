@@ -279,6 +279,16 @@ end
 
 # ── 8. activate_theme ─────────────────────────────────────────────────────────
 function activate_theme
+    set -l theme_link $HOME/.config/omarchy/themes/aether
+
+    if not test -e $theme_link
+        info "Registering aether theme with Omarchy..."
+        run mkdir -p $HOME/.config/omarchy/themes
+        or return 1
+        run ln -s $HOME/.config/aether/theme $theme_link
+        or return 1
+    end
+
     info "Activating aether theme via Omarchy..."
     run omarchy theme set aether
     or return 1
