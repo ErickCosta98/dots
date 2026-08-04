@@ -31,7 +31,6 @@ ghostty
 walker-bin
 voxtype-bin
 spotify-player
-swayosd-git
 nvm
 brave-bin
 android-studio
