@@ -8,6 +8,7 @@ curl
 wget
 atuin
 zellij
+ttf-firacode-nerd
 
 # Development
 # (docker, rust, ruby, clang, llvm, github-cli, jq, tree-sitter-cli,
