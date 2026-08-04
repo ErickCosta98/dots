@@ -35,7 +35,10 @@ function run
     if test $DRY_RUN = true
         echo $YELLOW"[dry-run]"$RESET" $argv"
     else
-        eval $argv
+        # Invoke $argv directly (not via `eval`) so an argument containing
+        # spaces/pipes (e.g. a `fish -c "a | b"` string) is passed through as
+        # ONE argument instead of being re-tokenized by eval.
+        $argv
         or begin
             error "Command failed: $argv"
             return 1
@@ -170,7 +173,15 @@ function copy_packages
         # Wipe the destination first: a prior stow run may have left symlinks
         # to the repo nested inside, which would make cp a no-op or error.
         run rm -rf $pkg_dst
+        or begin
+            error "Failed to remove existing $pkg_dst — check for a stuck mount, immutable file, or permission issue inside it."
+            return 1
+        end
         run mkdir -p $pkg_dst
+        or begin
+            error "Failed to create $pkg_dst"
+            return 1
+        end
         run cp -rT $pkg_src $pkg_dst
         or begin
             error "Failed to copy package: $pkg"
@@ -189,7 +200,15 @@ function copy_packages
     # 1Password only tracks ssh/agent.toml, under a capitalized directory name.
     info "Copying 1password..."
     run rm -rf $HOME/.config/1Password/ssh
+    or begin
+        error "Failed to remove existing ~/.config/1Password/ssh"
+        return 1
+    end
     run mkdir -p $HOME/.config/1Password/ssh
+    or begin
+        error "Failed to create ~/.config/1Password/ssh"
+        return 1
+    end
     run cp -rT $DOTS_DIR/1password/1Password/ssh $HOME/.config/1Password/ssh
     or begin
         error "Failed to copy package: 1password"
