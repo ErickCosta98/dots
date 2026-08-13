@@ -154,11 +154,16 @@ end
 function copy_packages
     info "Copying all packages into ~/.config/..."
 
+    # waybar, walker, and swayosd are no longer installed: the omarchy update
+    # replaced Waybar, the walker launcher, and the swayosd OSD with its own
+    # Quickshell bar/menu/OSD. aether is also no longer installed. Their dirs
+    # stay in the repo (kept in case we ever need them again) but are skipped
+    # here.
     set -l packages \
-        aether nvim fish hypr waybar \
-        ghostty alacritty walker voxtype \
+        nvim fish hypr \
+        ghostty alacritty voxtype \
         mise atuin \
-        btop swayosd spotify-player \
+        btop spotify-player \
         tmux zellij
 
     for pkg in $packages
@@ -277,24 +282,6 @@ function install_npm_globals
     info "Global npm packages installed."
 end
 
-# ── 8. activate_theme ─────────────────────────────────────────────────────────
-function activate_theme
-    set -l theme_link $HOME/.config/omarchy/themes/aether
-
-    if not test -e $theme_link
-        info "Registering aether theme with Omarchy..."
-        run mkdir -p $HOME/.config/omarchy/themes
-        or return 1
-        run ln -s $HOME/.config/aether/theme $theme_link
-        or return 1
-    end
-
-    info "Activating aether theme via Omarchy..."
-    run omarchy theme set aether
-    or return 1
-    info "Theme activated."
-end
-
 # ── 9. configure_secrets ─────────────────────────────────────────────────────
 function configure_secrets
     info "Configuring secrets..."
@@ -319,36 +306,6 @@ function configure_secrets
             end
         else
             warn "Skipped .calendar-url. Set it later: echo 'YOUR_URL' > ~/.config/hypr/.calendar-url"
-        end
-    end
-
-    # wallhaven.json — inform user, don't overwrite full JSON
-    set -l wh_real $HOME/.config/aether/wallhaven.json
-
-    if test -f $wh_real
-        info "wallhaven.json already exists — skipping."
-    else
-        warn "wallhaven.json not found."
-        warn "Get your API key from: https://wallhaven.cc/settings/account"
-        read -l -P "Enter your wallhaven API key (leave blank to skip): " wh_key
-        if test -n "$wh_key"
-            if test $DRY_RUN = true
-                echo $YELLOW"[dry-run]"$RESET" Would write wallhaven.json with apiKey: $wh_key"
-            else
-                # Write full JSON structure with provided key
-                echo "{
-  \"apiKey\": \"$wh_key\",
-  \"categories\": \"110\",
-  \"order\": \"desc\",
-  \"purity\": \"100\",
-  \"purityControlsEnabled\": true,
-  \"resolutions\": \"1920x1080\",
-  \"sorting\": \"date_added\"
-}" > $wh_real
-                info "Written: $wh_real"
-            end
-        else
-            warn "Skipped wallhaven.json. Copy the sample and edit it: cp $DOTS_DIR/aether/aether/wallhaven.json.sample $wh_real"
         end
     end
 
@@ -460,9 +417,6 @@ run_mise
 or exit 1
 
 install_npm_globals
-or exit 1
-
-activate_theme
 or exit 1
 
 configure_secrets
