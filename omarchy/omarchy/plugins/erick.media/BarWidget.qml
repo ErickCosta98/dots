@@ -15,10 +15,51 @@ BarWidget {
   readonly property string title: activePlayer ? (activePlayer.trackTitle || "") : ""
   readonly property string artist: activePlayer ? (activePlayer.trackArtist || "") : ""
 
+  // MPRIS position doesn't update reactively (avoids waking players every
+  // frame), so poll it on a timer instead of binding directly.
+  property real livePosition: 0
+  property real liveLength: 0
+  readonly property bool hasPosition: activePlayer && activePlayer.positionSupported && activePlayer.lengthSupported && liveLength > 0
+  readonly property string positionText: hasPosition ? (formatTime(livePosition) + " / " + formatTime(liveLength)) : ""
+
+  function formatTime(seconds) {
+    var total = Math.max(0, Math.floor(seconds))
+    var m = Math.floor(total / 60)
+    var s = total % 60
+    return m + ":" + (s < 10 ? "0" : "") + s
+  }
+
+  // Best-effort app icon from MPRIS identity/desktopEntry — falls back to a
+  // generic note glyph for anything not explicitly recognized.
+  function sourceIcon(player) {
+    if (!player) return "󰝚"
+    var id = (String(player.identity || "") + " " + String(player.desktopEntry || "")).toLowerCase()
+    if (id.indexOf("spotify") !== -1) return ""
+    if (id.indexOf("firefox") !== -1) return ""
+    if (id.indexOf("chrom") !== -1) return ""
+    if (id.indexOf("youtube") !== -1) return ""
+    return "󰝚"
+  }
+
+  readonly property string sourceGlyph: sourceIcon(activePlayer)
+  readonly property string sourceName: activePlayer ? (activePlayer.identity || activePlayer.desktopEntry || "") : ""
+
   property bool popupOpen: false
 
   function close() { popupOpen = false }
   property real maxLabelWidth: 180
+
+  Timer {
+    interval: 1000
+    running: root.hasMedia
+    repeat: true
+    triggeredOnStart: true
+    onTriggered: {
+      if (!root.activePlayer) return
+      root.livePosition = root.activePlayer.positionSupported ? root.activePlayer.position : 0
+      root.liveLength = root.activePlayer.lengthSupported ? root.activePlayer.length : 0
+    }
+  }
 
   visible: hasMedia
   implicitWidth: hasMedia ? row.implicitWidth + Style.space(14) : 0
@@ -28,6 +69,15 @@ BarWidget {
     id: row
     anchors.centerIn: parent
     spacing: Style.space(6)
+
+    Text {
+      id: sourceGlyphText
+      anchors.verticalCenter: parent.verticalCenter
+      text: root.sourceGlyph
+      color: Qt.darker(root.bar.barForeground, 1.3)
+      font.family: root.bar.fontFamily
+      font.pixelSize: Style.font.body
+    }
 
     Item {
       id: scrollClip
@@ -66,6 +116,15 @@ BarWidget {
         }
       }
     }
+
+    Text {
+      anchors.verticalCenter: parent.verticalCenter
+      visible: root.positionText !== "" && !root.bar.vertical
+      text: root.positionText
+      color: Qt.darker(root.bar.barForeground, 1.3)
+      font.family: root.bar.fontFamily
+      font.pixelSize: Style.font.caption
+    }
   }
 
   MouseArea {
@@ -89,7 +148,7 @@ BarWidget {
       if (wheel.angleDelta.y > 0 && root.mediaService) root.mediaService.runAction("previous", false)
       else if (wheel.angleDelta.y < 0 && root.mediaService) root.mediaService.runAction("next", false)
     }
-    onEntered: if (root.bar) root.bar.showTooltip(root, root.hasMedia ? (root.title + (root.artist ? " — " + root.artist : "")) : "")
+    onEntered: if (root.bar) root.bar.showTooltip(root, root.hasMedia ? (root.title + (root.artist ? " — " + root.artist : "") + (root.sourceName ? " (" + root.sourceName + ")" : "")) : "")
     onExited: if (root.bar) root.bar.hideTooltip(root)
   }
 
@@ -170,7 +229,36 @@ BarWidget {
             width: parent.width
             visible: text !== ""
           }
+
+          Row {
+            spacing: Style.space(4)
+            visible: root.sourceName !== ""
+
+            Text {
+              text: root.sourceGlyph
+              color: Qt.darker(root.bar.foreground, 1.3)
+              font.family: root.bar.fontFamily
+              font.pixelSize: Style.font.caption
+            }
+
+            Text {
+              text: root.sourceName
+              color: Qt.darker(root.bar.foreground, 1.3)
+              font.family: root.bar.fontFamily
+              font.pixelSize: Style.font.caption
+              elide: Text.ElideRight
+            }
+          }
         }
+      }
+
+      Text {
+        anchors.horizontalCenter: parent.horizontalCenter
+        visible: root.positionText !== ""
+        text: root.positionText
+        color: Qt.darker(root.bar.foreground, 1.3)
+        font.family: root.bar.fontFamily
+        font.pixelSize: Style.font.caption
       }
 
       Row {
