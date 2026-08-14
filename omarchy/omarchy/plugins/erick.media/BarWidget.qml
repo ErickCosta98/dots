@@ -56,7 +56,9 @@ BarWidget {
     triggeredOnStart: true
     onTriggered: {
       if (!root.activePlayer) return
-      root.livePosition = root.activePlayer.positionSupported ? root.activePlayer.position : 0
+      // Skip while the user is dragging the popup's seek slider — the
+      // player's real position would otherwise fight the drag every second.
+      if (!seekSlider.dragging) root.livePosition = root.activePlayer.positionSupported ? root.activePlayer.position : 0
       root.liveLength = root.activePlayer.lengthSupported ? root.activePlayer.length : 0
     }
   }
@@ -252,13 +254,35 @@ BarWidget {
         }
       }
 
-      Text {
-        anchors.horizontalCenter: parent.horizontalCenter
-        visible: root.positionText !== ""
-        text: root.positionText
-        color: Qt.darker(root.bar.foreground, 1.3)
-        font.family: root.bar.fontFamily
-        font.pixelSize: Style.font.caption
+      Column {
+        width: parent.width
+        spacing: Style.space(4)
+        visible: root.hasPosition
+
+        PanelSlider {
+          id: seekSlider
+          bar: root.bar
+          width: parent.width
+          minimum: 0
+          maximum: Math.max(0.001, root.liveLength)
+          value: root.livePosition
+          enabled: root.activePlayer && root.activePlayer.canSeek
+          opacity: enabled ? 1.0 : 0.4
+          onMoved: function(v) { root.livePosition = v }
+          onReleased: function(v) {
+            root.livePosition = v
+            if (root.activePlayer && root.activePlayer.canSeek && root.activePlayer.positionSupported)
+              root.activePlayer.position = v
+          }
+        }
+
+        Text {
+          anchors.horizontalCenter: parent.horizontalCenter
+          text: root.positionText
+          color: Qt.darker(root.bar.foreground, 1.3)
+          font.family: root.bar.fontFamily
+          font.pixelSize: Style.font.caption
+        }
       }
 
       Row {
