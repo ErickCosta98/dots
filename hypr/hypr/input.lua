@@ -8,6 +8,11 @@ hl.config({
     -- Use multiple keyboard layouts and switch between them with Left Alt + Right Alt.
     kb_layout = "us,es",
     kb_options = "compose:caps,shift:both_capslock_cancel,grp:alts_toggle",
+
+    touchpad = {
+      -- Natural (inverse) scrolling — content moves the way your fingers do.
+      natural_scroll = true,
+    },
   },
 })
 
