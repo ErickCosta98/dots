@@ -1,0 +1,147 @@
+#!/usr/bin/env python3
+# Collector for the omarchy Agents bar panel (omarchy.agents). Not shipped
+# by omarchy — opencode isn't a first-party collector, so this reads
+# opencode's own local usage directly and writes a record matching the
+# same contract the claude/codex collectors use, into
+# ~/.local/state/omarchy/agents/usage/opencode.json. The panel picks up
+# any record that lands there regardless of who wrote it.
+#
+# opencode migrated its session/message storage from loose JSON files
+# under storage/message/ to a SQLite db (opencode.db); the JSON tree only
+# has old, pre-migration sessions left over, so this reads the db instead
+# — it's the only place with a complete, current history.
+import json
+import os
+import sqlite3
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+DB_PATH = Path(os.path.expanduser("~/.local/share/opencode/opencode.db"))
+STATE_DIR = (
+    Path(os.environ.get("XDG_STATE_HOME", os.path.expanduser("~/.local/state")))
+    / "omarchy"
+    / "agents"
+    / "usage"
+)
+STATE_DIR.mkdir(parents=True, exist_ok=True)
+
+now = datetime.now().astimezone()
+today = now.date()
+
+model_usage = {}
+active_dates = set()
+sessions_by_date = {}
+prompts_by_date = {}
+today_tokens_by_model = {}
+total_prompts = 0
+total_sessions_seen = set()
+
+if DB_PATH.is_file():
+    # Read-only URI connection so this never blocks or is blocked by a
+    # running opencode instance writing to the same (WAL-mode) db.
+    conn = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True)
+    rows = conn.execute("SELECT session_id, data FROM message").fetchall()
+    conn.close()
+
+    for session_id_col, raw in rows:
+        try:
+            msg = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+        if msg.get("role") != "assistant":
+            continue
+        tokens = msg.get("tokens") or {}
+        if not tokens:
+            continue
+        time_info = msg.get("time") or {}
+        ts_ms = time_info.get("completed") or time_info.get("created")
+        if not ts_ms:
+            continue
+
+        dt = datetime.fromtimestamp(ts_ms / 1000).astimezone()
+        date_str = dt.date().isoformat()
+
+        model = msg.get("modelID") or "unknown"
+        provider = msg.get("providerID") or ""
+        # "opencode" / "opencode-go" are opencode's own hosted Zen
+        # gateway (regular and Go tier) — label them clearly instead of
+        # blending into the generic provider/model grouping.
+        if provider == "opencode":
+            model_key = f"zen/{model}"
+        elif provider == "opencode-go":
+            model_key = f"zen-go/{model}"
+        elif provider:
+            model_key = f"{provider}/{model}"
+        else:
+            model_key = model
+
+        mu = model_usage.setdefault(
+            model_key,
+            {
+                "inputTokens": 0,
+                "outputTokens": 0,
+                "cacheCreationInputTokens": 0,
+                "cacheReadInputTokens": 0,
+            },
+        )
+        input_tok = tokens.get("input", 0) or 0
+        output_tok = (tokens.get("output", 0) or 0) + (tokens.get("reasoning", 0) or 0)
+        cache = tokens.get("cache") or {}
+        cache_read = cache.get("read", 0) or 0
+        cache_write = cache.get("write", 0) or 0
+
+        mu["inputTokens"] += input_tok
+        mu["outputTokens"] += output_tok
+        mu["cacheReadInputTokens"] += cache_read
+        mu["cacheCreationInputTokens"] += cache_write
+
+        session_id = msg.get("sessionID") or session_id_col
+        active_dates.add(date_str)
+        sessions_by_date.setdefault(date_str, set()).add(session_id)
+        prompts_by_date[date_str] = prompts_by_date.get(date_str, 0) + 1
+        total_prompts += 1
+        total_sessions_seen.add(session_id)
+
+        if date_str == today.isoformat():
+            today_tokens_by_model[model_key] = (
+                today_tokens_by_model.get(model_key, 0) + input_tok + output_tok
+            )
+
+recent_days = []
+for i in range(6, -1, -1):
+    d = (today - timedelta(days=i)).isoformat()
+    recent_days.append({"date": d, "messageCount": prompts_by_date.get(d, 0)})
+
+today_str = today.isoformat()
+today_prompts = prompts_by_date.get(today_str, 0)
+today_sessions = len(sessions_by_date.get(today_str, set()))
+today_total_tokens = sum(today_tokens_by_model.values())
+
+has_data = bool(model_usage)
+
+record = {
+    "schemaVersion": 1,
+    "id": "opencode",
+    "name": "opencode",
+    "updatedAt": datetime.now(timezone.utc).isoformat(),
+    "ready": has_data,
+    "hasLocalStats": has_data,
+    "todayPrompts": today_prompts,
+    "todaySessions": today_sessions,
+    "todayTotalTokens": today_total_tokens,
+    "todayTokensByModel": today_tokens_by_model,
+    "recentDays": recent_days,
+    "totalPrompts": total_prompts,
+    "totalSessions": len(total_sessions_seen),
+    "activeDays": len(active_dates),
+    "activeDates": sorted(active_dates),
+    "modelUsage": model_usage,
+    "limits": [],
+    "tierLabel": "Local",
+    "usageStatusText": "" if has_data else "No local opencode usage found",
+    "authHelpText": "opencode has no rate-limit API; this tab only shows local session stats.",
+}
+
+tmp = STATE_DIR / ".opencode.tmp"
+tmp.write_text(json.dumps(record))
+tmp.replace(STATE_DIR / "opencode.json")

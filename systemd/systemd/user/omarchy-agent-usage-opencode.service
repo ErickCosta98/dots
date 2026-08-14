@@ -1,0 +1,6 @@
+[Unit]
+Description=Regenerate opencode usage record for the omarchy Agents bar panel
+
+[Service]
+Type=oneshot
+ExecStart=%h/.config/omarchy/agents/opencode-usage-collector

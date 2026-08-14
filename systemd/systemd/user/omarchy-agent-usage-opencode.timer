@@ -1,0 +1,10 @@
+[Unit]
+Description=Periodically regenerate opencode usage record for the omarchy Agents bar panel
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=900
+Persistent=true
+
+[Install]
+WantedBy=timers.target
