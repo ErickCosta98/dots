@@ -66,6 +66,11 @@ BarWidget {
     bar: root.bar
     owner: root
     open: root.popupOpen
+    // PopupCard (PopupWindow) doesn't grab keyboard focus by default — no
+    // other plugin puts a TextField inside one, so this was never needed
+    // until now. Without it, clicks land in the field but no keyboard
+    // input reaches the popup's Wayland surface.
+    grabFocus: true
     contentWidth: popup.fittedContentWidth(Style.space(300))
     contentHeight: popup.fittedContentHeight(column.implicitHeight)
 
@@ -215,6 +220,26 @@ BarWidget {
         spacing: Style.space(6)
 
         Button {
+          text: "Start"
+          foreground: root.bar.foreground
+          horizontalPadding: Style.spacing.controlPaddingX
+          verticalPadding: Style.spacing.controlPaddingY
+          enabled: root.inputLeapService && (root.state === "stopped" || root.state === "error")
+          opacity: enabled ? 1.0 : 0.4
+          onClicked: if (root.inputLeapService) root.inputLeapService.start()
+        }
+
+        Button {
+          text: "Stop"
+          foreground: root.bar.foreground
+          horizontalPadding: Style.spacing.controlPaddingX
+          verticalPadding: Style.spacing.controlPaddingY
+          enabled: root.inputLeapService && root.state !== "stopped"
+          opacity: enabled ? 1.0 : 0.4
+          onClicked: if (root.inputLeapService) root.inputLeapService.stop()
+        }
+
+        Button {
           text: "Restart"
           foreground: root.bar.foreground
           horizontalPadding: Style.spacing.controlPaddingX
@@ -222,18 +247,6 @@ BarWidget {
           enabled: root.inputLeapService && root.state !== "stopped"
           opacity: enabled ? 1.0 : 0.4
           onClicked: if (root.inputLeapService) root.inputLeapService.restart()
-        }
-
-        Button {
-          text: root.state === "stopped" || root.state === "error" ? "Start" : "Stop"
-          foreground: root.bar.foreground
-          horizontalPadding: Style.spacing.controlPaddingX
-          verticalPadding: Style.spacing.controlPaddingY
-          onClicked: {
-            if (!root.inputLeapService) return
-            if (root.state === "stopped" || root.state === "error") root.inputLeapService.start()
-            else root.inputLeapService.stop()
-          }
         }
       }
     }
