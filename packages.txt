@@ -9,6 +9,7 @@ wget
 atuin
 zellij
 ttf-firacode-nerd
+lan-mouse
 
 # Development
 # (docker, rust, ruby, clang, llvm, github-cli, jq, tree-sitter-cli,
@@ -40,7 +41,6 @@ mongodb-compass-bin
 postman-bin
 sonar-scanner
 sdkman-bin
-input-leap-bin
 php74
 php74-apache
 php74-cgi
