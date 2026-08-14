@@ -77,6 +77,46 @@ Item {
   readonly property string mediaTitle: activeMediaPlayer ? (activeMediaPlayer.trackTitle || "Sin música") : "Sin música"
   readonly property string mediaArtist: activeMediaPlayer ? (activeMediaPlayer.trackArtist || "") : ""
   readonly property string mediaAlbum: activeMediaPlayer ? (activeMediaPlayer.trackAlbum || "") : ""
+  readonly property string mediaArtUrl: activeMediaPlayer && activeMediaPlayer.trackArtUrl ? activeMediaPlayer.trackArtUrl : ""
+  readonly property string mediaSourceName: activeMediaPlayer ? (activeMediaPlayer.identity || activeMediaPlayer.desktopEntry || "") : ""
+
+  function mediaSourceIcon(player) {
+    if (!player) return "󰝚"
+    var id = (String(player.identity || "") + " " + String(player.desktopEntry || "")).toLowerCase()
+    if (id.indexOf("spotify") !== -1) return ""
+    if (id.indexOf("firefox") !== -1) return ""
+    if (id.indexOf("chrom") !== -1) return ""
+    if (id.indexOf("youtube") !== -1) return ""
+    return "󰝚"
+  }
+
+  readonly property string mediaSourceGlyph: mediaSourceIcon(activeMediaPlayer)
+
+  // MPRIS position doesn't update reactively, so poll it instead of binding
+  // directly — same approach as the bar's media widget.
+  property real mediaLivePosition: 0
+  property real mediaLiveLength: 0
+  readonly property bool mediaHasPosition: activeMediaPlayer && activeMediaPlayer.positionSupported && activeMediaPlayer.lengthSupported && mediaLiveLength > 0
+  readonly property string mediaPositionText: mediaHasPosition ? (formatMediaTime(mediaLivePosition) + " / " + formatMediaTime(mediaLiveLength)) : ""
+
+  function formatMediaTime(seconds) {
+    var total = Math.max(0, Math.floor(seconds))
+    var m = Math.floor(total / 60)
+    var s = total % 60
+    return m + ":" + (s < 10 ? "0" : "") + s
+  }
+
+  Timer {
+    interval: 1000
+    running: root.activeMediaPlayer !== null
+    repeat: true
+    triggeredOnStart: true
+    onTriggered: {
+      if (!root.activeMediaPlayer) return
+      if (!mediaSeekSlider.dragging) root.mediaLivePosition = root.activeMediaPlayer.positionSupported ? root.activeMediaPlayer.position : 0
+      root.mediaLiveLength = root.activeMediaPlayer.lengthSupported ? root.activeMediaPlayer.length : 0
+    }
+  }
 
   signal submitPassword(string password)
   signal passwordTextEdited(string password)
@@ -495,8 +535,36 @@ Item {
 
         Column {
           anchors.centerIn: parent
-          spacing: 24
+          spacing: 16
           width: parent.width - 40
+
+          Rectangle {
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: 72
+            height: 72
+            radius: 16
+            color: Qt.rgba(1, 1, 1, 0.08)
+            clip: true
+            visible: root.activeMediaPlayer !== null
+
+            Image {
+              anchors.fill: parent
+              anchors.margins: 2
+              fillMode: Image.PreserveAspectCrop
+              asynchronous: true
+              source: root.mediaArtUrl
+              visible: source !== ""
+            }
+
+            Text {
+              anchors.centerIn: parent
+              visible: root.mediaArtUrl === ""
+              text: "󰝚"
+              color: Color.lock.text
+              font.family: Style.font.family
+              font.pixelSize: 30
+            }
+          }
 
           Column {
             anchors.horizontalCenter: parent.horizontalCenter
@@ -528,6 +596,60 @@ Item {
               anchors.horizontalCenter: parent.horizontalCenter
               text: root.mediaAlbum.length > 0 ? "󰀥  " + root.mediaAlbum : ""
               visible: root.mediaAlbum.length > 0
+              color: Color.lock.placeholder
+              font.family: Style.font.family
+              font.pixelSize: 11
+            }
+
+            Row {
+              anchors.horizontalCenter: parent.horizontalCenter
+              spacing: 4
+              visible: root.mediaSourceName.length > 0
+
+              Text {
+                text: root.mediaSourceGlyph
+                color: Color.lock.placeholder
+                font.family: Style.font.family
+                font.pixelSize: 11
+              }
+
+              Text {
+                text: root.mediaSourceName
+                color: Color.lock.placeholder
+                font.family: Style.font.family
+                font.pixelSize: 11
+                elide: Text.ElideRight
+              }
+            }
+          }
+
+          Column {
+            width: parent.width
+            spacing: 4
+            visible: root.mediaHasPosition
+
+            PanelSlider {
+              id: mediaSeekSlider
+              width: parent.width
+              minimum: 0
+              maximum: Math.max(0.001, root.mediaLiveLength)
+              value: root.mediaLivePosition
+              trackColor: Qt.rgba(1, 1, 1, 0.15)
+              fillColor: Color.lock.text
+              knobColor: Color.lock.text
+              enabled: root.activeMediaPlayer && root.activeMediaPlayer.canSeek
+              opacity: enabled ? 1.0 : 0.4
+              onMoved: function(v) { root.mediaLivePosition = v }
+              onReleased: function(v) {
+                root.mediaLivePosition = v
+                if (root.activeMediaPlayer && root.activeMediaPlayer.canSeek && root.activeMediaPlayer.positionSupported)
+                  root.activeMediaPlayer.position = v
+              }
+            }
+
+            Text {
+              anchors.horizontalCenter: parent.horizontalCenter
+              text: root.mediaPositionText
               color: Color.lock.placeholder
               font.family: Style.font.family
               font.pixelSize: 11
