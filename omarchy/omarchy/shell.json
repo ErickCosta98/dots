@@ -19,6 +19,9 @@
           "id": "omarchy.weather"
         },
         {
+          "id": "erick.media"
+        },
+        {
           "id": "omarchy.system-update"
         }
       ],
@@ -88,6 +91,18 @@
     "lock": 300,
     "screensaver": 150
   },
-  "plugins": [],
-  "version": 1
+  "plugins": [
+    {
+      "id": "erick.lock"
+    }
+  ],
+  "version": 1,
+  "disabledPlugins": [
+    "omarchy.lock",
+    "omarchy.media"
+  ],
+  "cloneSourceRestores": [
+    "erick.lock",
+    "erick.media"
+  ]
 }
