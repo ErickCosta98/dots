@@ -40,6 +40,7 @@ mongodb-compass-bin
 postman-bin
 sonar-scanner
 sdkman-bin
+input-leap-bin
 php74
 php74-apache
 php74-cgi

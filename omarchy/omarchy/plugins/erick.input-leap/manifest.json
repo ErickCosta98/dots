@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "erick.input-leap",
+  "name": "Input Leap",
+  "version": "1.0.0",
+  "author": "Omarchy",
+  "description": "Manages an Input Leap client/server (input-leapc/input-leaps) for keyboard/mouse sharing",
+  "kinds": [
+    "service",
+    "bar-widget"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "service": "Service.qml",
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Input Leap",
+    "description": "Input Leap connection status with start/stop controls",
+    "category": "Devices",
+    "allowMultiple": false
+  }
+}
