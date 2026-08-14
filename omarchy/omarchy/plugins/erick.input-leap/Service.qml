@@ -44,9 +44,18 @@ Item {
   property bool _configLoaded: false
   property bool _hydrating: false
 
+  // --disable-crypto avoids Input Leap's own TLS handshake, which requires
+  // a client/server certificate at ~/.config/InputLeap/SSL/InputLeap.pem
+  // that nothing here generates — verified this is the actual failure mode
+  // ("ssl certificate doesn't exist") when connecting without it. Both
+  // ends must agree: the other machine's Input Leap also needs SSL/TLS
+  // disabled in its own settings, or the connection is opened and
+  // immediately closed with no further error. This assumes the transport
+  // itself is already encrypted (e.g. Tailscale) since Input Leap's own
+  // encryption is turned off.
   function buildCommand() {
     if (mode === "server") {
-      var serverCmd = ["input-leaps", "--no-daemon", "--config", root.serverTopologyPath]
+      var serverCmd = ["input-leaps", "--no-daemon", "--disable-crypto", "--config", root.serverTopologyPath]
       if (root.localScreenName) {
         serverCmd.push("--name")
         serverCmd.push(root.localScreenName)
@@ -58,7 +67,7 @@ Item {
       return serverCmd
     }
 
-    var clientCmd = ["input-leapc", "--no-daemon"]
+    var clientCmd = ["input-leapc", "--no-daemon", "--disable-crypto"]
     clientCmd.push(serverHost)
     return clientCmd
   }

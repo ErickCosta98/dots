@@ -67,8 +67,18 @@ Edit settings from the bar popup, or directly in
 
 ## CLI invocation
 
-- Client: `input-leapc --no-daemon <serverHost>`
-- Server: `input-leaps --no-daemon --config <serverTopologyPath> --name <localScreenName> [--address <serverAddress>]`
+- Client: `input-leapc --no-daemon --disable-crypto <serverHost>`
+- Server: `input-leaps --no-daemon --disable-crypto --config <serverTopologyPath> --name <localScreenName> [--address <serverAddress>]`
+
+`--disable-crypto` is always passed: connecting with Input Leap's default
+TLS on failed with `ssl certificate doesn't exist:
+~/.config/InputLeap/SSL/InputLeap.pem` (verified against the real binary)
+— nothing here generates that certificate. **Both machines must agree**:
+the other side's Input Leap (GUI or CLI) also needs SSL/encryption
+disabled in its own settings, or the connection opens and is immediately
+closed with no further log line. This assumes the transport itself is
+already encrypted (e.g. a Tailscale link) since Input Leap's own
+encryption is off.
 
 Both are run with `--no-daemon` so the process stays foreground and attached
 to the QuickShell `Process` — this is required for real lifecycle tracking
@@ -139,7 +149,15 @@ target `input-leap`: `start`, `stop`, `restart`, `status` (JSON), `ping`.
 - **"Unable to connect" / connection refused**: check that the target
   machine's Input Leap server/client is running, the address/port is
   correct, and no firewall is blocking the connection (Input Leap defaults
-  to TCP port 24800).
+  to TCP port 24800). A LAN IP blocked by the other machine's firewall
+  but a Tailscale IP reaching the same port fine is a common split —
+  verified with `bash -c 'cat < /dev/null > /dev/tcp/<ip>/24800'`; prefer
+  the Tailscale address in that case.
+- **Socket opens then immediately closes, no error, retries forever**: an
+  encryption mismatch — one side has Input Leap's TLS enabled and the
+  other doesn't. Since this plugin always passes `--disable-crypto` (see
+  **CLI invocation**), disable SSL/encryption on the other machine's
+  Input Leap too.
 - **State stuck on "running" and never reaches "connected"**: your Input
   Leap version likely logs a different connection-success phrase — see
   **Known limitations** above.
