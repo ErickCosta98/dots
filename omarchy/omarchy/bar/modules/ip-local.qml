@@ -9,6 +9,7 @@ Item {
 
   property string ipText: "…"
   property bool tooltipHovered: false
+  property bool copyOnFinish: false
 
   implicitWidth: 28
   implicitHeight: bar ? bar.barSize : 26
@@ -34,6 +35,10 @@ Item {
           t = data.text || raw
         } catch (e) {}
         ipText = t
+        if (copyOnFinish) {
+          copyOnFinish = false
+          if (bar) bar.run("bash -c 'echo -n \"" + ipText + "\" | wl-copy && notify-send \"IP Local copiada\"'")
+        }
       }
     }
   }
@@ -49,6 +54,7 @@ Item {
   MouseArea {
     anchors.fill: parent
     hoverEnabled: true
+    acceptedButtons: Qt.LeftButton | Qt.RightButton
     onEntered: {
       tooltipHovered = true
       if (bar) bar.showTooltip(root, "IP Local: " + ipText)
@@ -57,6 +63,13 @@ Item {
       tooltipHovered = false
       if (bar) bar.hideTooltip(root)
     }
-    onClicked: if (bar) bar.run("bash -c 'echo -n \"" + ipText + "\" | wl-copy && notify-send \"IP Local copiada\"'")
+    onClicked: function(mouse) {
+      if (mouse.button === Qt.RightButton) {
+        if (bar) bar.run("bash -c 'echo -n \"" + ipText + "\" | wl-copy && notify-send \"IP Local copiada\"'")
+      } else {
+        copyOnFinish = true
+        if (!proc.running) proc.running = true
+      }
+    }
   }
 }
