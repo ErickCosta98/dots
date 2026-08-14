@@ -19,7 +19,13 @@ Item {
   property string mode: "client" // "client" | "server"
   property string serverHost: "" // client mode: address to connect to
   property string serverAddress: "" // server mode: optional bind address
+  property string remoteScreenName: "" // server mode: hostname of the other screen
   property bool autoStart: false
+
+  // server mode only: this machine's screen name, auto-detected via `hostname`
+  // and used both as the --name flag and as one of the two screens in the
+  // generated topology config.
+  property string localScreenName: ""
 
   // --- state machine ---
   // "stopped" | "starting" | "running" | "connected" | "disconnected" | "error"
@@ -33,13 +39,18 @@ Item {
   readonly property string home: Quickshell.env("HOME")
   readonly property string configDir: home + "/.config/quickshell"
   readonly property string configPath: configDir + "/input-leap.conf"
+  readonly property string serverTopologyPath: configDir + "/input-leap-server.conf"
 
   property bool _configLoaded: false
   property bool _hydrating: false
 
   function buildCommand() {
     if (mode === "server") {
-      var serverCmd = ["input-leaps", "--no-daemon"]
+      var serverCmd = ["input-leaps", "--no-daemon", "--config", root.serverTopologyPath]
+      if (root.localScreenName) {
+        serverCmd.push("--name")
+        serverCmd.push(root.localScreenName)
+      }
       if (serverAddress) {
         serverCmd.push("--address")
         serverCmd.push(serverAddress)
@@ -52,6 +63,24 @@ Item {
     return clientCmd
   }
 
+  // input-leaps refuses to start without a config file declaring at least
+  // two screens and a link between them (verified: it exits with "no
+  // configuration available" otherwise). Generate a minimal two-screen
+  // layout — local screen left, remote screen right — from the local
+  // hostname and the user-provided remote screen name.
+  function buildServerTopology(local, remote) {
+    return "section: screens\n" +
+      "\t" + local + ":\n" +
+      "\t" + remote + ":\n" +
+      "end\n\n" +
+      "section: links\n" +
+      "\t" + local + ":\n" +
+      "\t\tright = " + remote + "\n" +
+      "\t" + remote + ":\n" +
+      "\t\tleft = " + local + "\n" +
+      "end\n"
+  }
+
   function start() {
     if (managedProcess.running) return
     if (mode === "client" && !serverHost) {
@@ -59,9 +88,23 @@ Item {
       root.errorMessage = "Server address is required in client mode"
       return
     }
+    if (mode === "server" && !remoteScreenName.trim()) {
+      root.state = "error"
+      root.errorMessage = "Remote screen name is required in server mode"
+      return
+    }
 
     root.state = "starting"
     root.errorMessage = ""
+
+    if (mode === "server") {
+      hostnameProc.running = true
+    } else {
+      root.proceedToBinaryCheck()
+    }
+  }
+
+  function proceedToBinaryCheck() {
     binaryCheckProc.command = ["bash", "-c", "command -v " + root.binaryName]
     binaryCheckProc.running = true
   }
@@ -110,6 +153,7 @@ Item {
         if (parsed.mode === "client" || parsed.mode === "server") root.mode = parsed.mode
         if (typeof parsed.serverHost === "string") root.serverHost = parsed.serverHost
         if (typeof parsed.serverAddress === "string") root.serverAddress = parsed.serverAddress
+        if (typeof parsed.remoteScreenName === "string") root.remoteScreenName = parsed.remoteScreenName
         if (typeof parsed.autoStart === "boolean") root.autoStart = parsed.autoStart
       } catch (e) {
         console.warn("erick.input-leap: failed to parse config:", e)
@@ -132,6 +176,7 @@ Item {
       mode: root.mode,
       serverHost: root.serverHost,
       serverAddress: root.serverAddress,
+      remoteScreenName: root.remoteScreenName,
       autoStart: root.autoStart
     }, null, 2) + "\n")
   }
@@ -139,6 +184,7 @@ Item {
   onModeChanged: scheduleSave()
   onServerHostChanged: scheduleSave()
   onServerAddressChanged: scheduleSave()
+  onRemoteScreenNameChanged: scheduleSave()
   onAutoStartChanged: scheduleSave()
 
   Component.onCompleted: {
@@ -167,6 +213,28 @@ Item {
     interval: 200
     repeat: false
     onTriggered: root.saveConfig()
+  }
+
+  // Server mode: resolve the local hostname, write the two-screen topology
+  // config, then continue to the binary check — in that order, so the config
+  // file exists on disk before input-leaps is spawned.
+  Process {
+    id: hostnameProc
+    command: ["hostname"]
+    stdout: StdioCollector { id: hostnameOut; waitForEnd: true }
+    onExited: function() {
+      var local = String(hostnameOut.text || "").trim().split(/\s+/)[0]
+      root.localScreenName = local || "local"
+      serverTopologyFile.setText(root.buildServerTopology(root.localScreenName, root.remoteScreenName.trim()))
+      Qt.callLater(root.proceedToBinaryCheck)
+    }
+  }
+
+  FileView {
+    id: serverTopologyFile
+    path: root.serverTopologyPath
+    watchChanges: false
+    printErrors: false
   }
 
   // Checks the binary is installed before spawning the real process, so a
@@ -249,6 +317,7 @@ Item {
       errorMessage: root.errorMessage,
       serverHost: root.serverHost,
       serverAddress: root.serverAddress,
+      remoteScreenName: root.remoteScreenName,
       autoStart: root.autoStart
     })
   }

@@ -185,6 +185,27 @@ BarWidget {
             onEditingFinished: if (root.inputLeapService) root.inputLeapService.serverAddress = text
           }
         }
+
+        Row {
+          spacing: Style.space(6)
+          width: parent.width
+          visible: root.mode === "server"
+
+          Text {
+            text: "Remote screen"
+            width: Style.space(90)
+            color: Qt.darker(root.bar.foreground, 1.3)
+            font.family: root.bar.fontFamily
+            font.pixelSize: Style.font.bodySmall
+          }
+
+          TextField {
+            width: parent.width - Style.space(96)
+            text: root.inputLeapService ? root.inputLeapService.remoteScreenName : ""
+            placeholderText: "hostname of the other laptop"
+            onEditingFinished: if (root.inputLeapService) root.inputLeapService.remoteScreenName = text
+          }
+        }
       }
 
       PanelSeparator { foreground: root.bar.foreground }
