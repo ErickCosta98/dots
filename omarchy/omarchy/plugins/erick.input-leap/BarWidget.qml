@@ -60,17 +60,19 @@ BarWidget {
     onExited: if (root.bar) root.bar.hideTooltip(root)
   }
 
-  PopupCard {
+  // PopupCard (xdg-popup) never receives keyboard focus unless it was
+  // summoned by a key press, so the TextFields below couldn't be typed
+  // into. KeyboardPanel is this repo's purpose-built layer-shell
+  // alternative for exactly this case — same anchorItem/bar/owner/open/
+  // contentWidth/contentHeight API, but primes real Wayland keyboard
+  // focus on open (see Ui/KeyboardPanel.qml for why).
+  KeyboardPanel {
     id: popup
     anchorItem: root
     bar: root.bar
     owner: root
     open: root.popupOpen
-    // PopupCard (PopupWindow) doesn't grab keyboard focus by default — no
-    // other plugin puts a TextField inside one, so this was never needed
-    // until now. Without it, clicks land in the field but no keyboard
-    // input reaches the popup's Wayland surface.
-    grabFocus: true
+    focusTarget: root.mode === "server" ? remoteScreenField : serverHostField
     contentWidth: popup.fittedContentWidth(Style.space(300))
     contentHeight: popup.fittedContentHeight(column.implicitHeight)
 
@@ -163,10 +165,11 @@ BarWidget {
           }
 
           TextField {
+            id: serverHostField
             width: parent.width - Style.space(96)
             text: root.inputLeapService ? root.inputLeapService.serverHost : ""
             placeholderText: "e.g. 192.168.1.10"
-            onEditingFinished: if (root.inputLeapService) root.inputLeapService.serverHost = text
+            onTextEdited: if (root.inputLeapService) root.inputLeapService.serverHost = text
           }
         }
 
@@ -187,7 +190,7 @@ BarWidget {
             width: parent.width - Style.space(96)
             text: root.inputLeapService ? root.inputLeapService.serverAddress : ""
             placeholderText: "optional, e.g. :24800"
-            onEditingFinished: if (root.inputLeapService) root.inputLeapService.serverAddress = text
+            onTextEdited: if (root.inputLeapService) root.inputLeapService.serverAddress = text
           }
         }
 
@@ -205,10 +208,11 @@ BarWidget {
           }
 
           TextField {
+            id: remoteScreenField
             width: parent.width - Style.space(96)
             text: root.inputLeapService ? root.inputLeapService.remoteScreenName : ""
             placeholderText: "hostname of the other laptop"
-            onEditingFinished: if (root.inputLeapService) root.inputLeapService.remoteScreenName = text
+            onTextEdited: if (root.inputLeapService) root.inputLeapService.remoteScreenName = text
           }
         }
       }
