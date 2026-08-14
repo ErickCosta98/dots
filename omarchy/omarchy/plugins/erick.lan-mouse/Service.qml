@@ -227,13 +227,42 @@ Item {
 
   // --- client management: real `lan-mouse cli` calls, no invented flags ---
 
-  function addClient(hostname, port) {
+  // `lan-mouse cli add-client` has no --position flag (verified via
+  // --help: only --hostname/--port/--ips/--enter-hook) — new clients
+  // always land on lan-mouse's own default ("left"). To honor a
+  // non-default position picked in the Add-machine form, refresh the
+  // list right after adding, find the new entry by hostname/port, and
+  // follow up with set-position.
+  function addClient(hostname, port, position) {
     if (!hostname || !hostname.trim()) return
     var args = ["add-client", "--hostname", hostname.trim()]
     if (port) args.push("--port", String(port))
     runCli(args, function(exitCode, out, err) {
-      if (exitCode === 0) root.saveAndRefresh()
-      else root._reportCliError("Add client failed", err)
+      if (exitCode !== 0) {
+        root._reportCliError("Add client failed", err)
+        return
+      }
+      if (!position || position === "left") {
+        root.saveAndRefresh()
+        return
+      }
+      runCli(["list"], function(listExitCode, listOut) {
+        if (listExitCode === 0) {
+          var parsed = root.parseListOutput(listOut)
+          var match = null
+          for (var i = parsed.length - 1; i >= 0; i--) {
+            if (parsed[i].hostname === hostname.trim() && (!port || parsed[i].port === port)) {
+              match = parsed[i]
+              break
+            }
+          }
+          if (match) {
+            root.setPosition(match.id, position)
+            return
+          }
+        }
+        root.saveAndRefresh()
+      })
     })
   }
 
@@ -316,8 +345,8 @@ Item {
       return root.statusJson()
     }
 
-    function addClient(hostname: string, port: string): string {
-      root.addClient(hostname, port ? parseInt(port, 10) : 0)
+    function addClient(hostname: string, port: string, position: string): string {
+      root.addClient(hostname, port ? parseInt(port, 10) : 0, position || "left")
       return "ok"
     }
 

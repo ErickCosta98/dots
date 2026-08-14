@@ -153,7 +153,7 @@ BarWidget {
               Text {
                 anchors.verticalCenter: parent.verticalCenter
                 width: parent.width - Style.space(210)
-                text: clientRow.modelData.hostname + ":" + clientRow.modelData.port + " (" + clientRow.modelData.position + ")"
+                text: clientRow.modelData.hostname + ":" + clientRow.modelData.port
                 color: root.bar.foreground
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.bodySmall
@@ -178,6 +178,26 @@ BarWidget {
                 horizontalPadding: Style.spacing.controlPaddingX
                 verticalPadding: Style.spacing.controlPaddingY
                 onClicked: if (root.lanMouseService) root.lanMouseService.removeClient(clientRow.modelData.id)
+              }
+            }
+
+            // Position of the OTHER laptop relative to this one — move the
+            // physical cursor off the matching screen edge to reach it.
+            Row {
+              spacing: Style.space(4)
+
+              Repeater {
+                model: ["left", "right", "top", "bottom"]
+
+                Button {
+                  required property string modelData
+                  text: modelData
+                  selected: clientRow.modelData.position === modelData
+                  foreground: root.bar.foreground
+                  horizontalPadding: Style.spacing.controlPaddingX
+                  verticalPadding: Style.spacing.controlPaddingY
+                  onClicked: if (root.lanMouseService) root.lanMouseService.setPosition(clientRow.modelData.id, modelData)
+                }
               }
             }
           }
@@ -222,6 +242,34 @@ BarWidget {
 
       property string _pendingHostname: ""
       property string _pendingPort: ""
+      property string _pendingPosition: "left"
+
+      Row {
+        spacing: Style.space(6)
+        width: parent.width
+
+        Text {
+          anchors.verticalCenter: parent.verticalCenter
+          text: "Position"
+          color: Qt.darker(root.bar.foreground, 1.3)
+          font.family: root.bar.fontFamily
+          font.pixelSize: Style.font.bodySmall
+        }
+
+        Repeater {
+          model: ["left", "right", "top", "bottom"]
+
+          Button {
+            required property string modelData
+            text: modelData
+            selected: column._pendingPosition === modelData
+            foreground: root.bar.foreground
+            horizontalPadding: Style.spacing.controlPaddingX
+            verticalPadding: Style.spacing.controlPaddingY
+            onClicked: column._pendingPosition = modelData
+          }
+        }
+      }
 
       Button {
         text: "Add"
@@ -234,11 +282,12 @@ BarWidget {
         onClicked: {
           if (!root.lanMouseService) return
           var port = column._pendingPort.trim().length > 0 ? parseInt(column._pendingPort.trim(), 10) : 0
-          root.lanMouseService.addClient(column._pendingHostname.trim(), port)
+          root.lanMouseService.addClient(column._pendingHostname.trim(), port, column._pendingPosition)
           hostnameField.text = ""
           portField.text = ""
           column._pendingHostname = ""
           column._pendingPort = ""
+          column._pendingPosition = "left"
         }
       }
 

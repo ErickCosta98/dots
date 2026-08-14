@@ -126,10 +126,13 @@ Windows documentation.
   disabled — only Start (for this shell's own instance) is meaningful.
 - **Windows side unmanaged.** This plugin has no visibility into or
   control over the Windows laptop's lan-mouse instance.
-- **`add-client` has no `--position` flag.** New clients get whatever
-  position lan-mouse defaults new entries to; use "Set position" (per-row
-  Activate/Deactivate/Remove buttons plus the service's `setPosition()`)
-  to adjust afterward.
+- **`add-client` has no `--position` flag.** New clients always land on
+  lan-mouse's own default ("left") first. The Add-machine form's position
+  picker works around this: after `add-client` succeeds, the plugin
+  re-lists clients, finds the new entry by hostname/port, and issues a
+  follow-up `set-position` call — so picking anything other than "left"
+  costs one extra round-trip, invisible in the UI but worth knowing if
+  you're watching the logs.
 
 ## Troubleshooting
 
