@@ -12,7 +12,6 @@ BarWidget {
   readonly property var sourcePlayers: mediaService ? mediaService.sourcePlayers : []
 
   readonly property bool hasMedia: activePlayer !== null && (activePlayer.trackTitle || activePlayer.trackArtist)
-  readonly property string playIcon: activePlayer && activePlayer.isPlaying ? "󰏤" : "󰐊"
   readonly property string title: activePlayer ? (activePlayer.trackTitle || "") : ""
   readonly property string artist: activePlayer ? (activePlayer.trackArtist || "") : ""
 
@@ -30,23 +29,10 @@ BarWidget {
     anchors.centerIn: parent
     spacing: Style.space(6)
 
-    Text {
-      id: glyph
-      anchors.verticalCenter: parent.verticalCenter
-      text: root.playIcon
-      color: activePlayer && activePlayer.isPlaying ? root.bar.barForeground : Qt.darker(root.bar.barForeground, 1.5)
-      font.family: root.bar.fontFamily
-      font.pixelSize: Style.font.body
-      Behavior on color {
-        enabled: !root.bar || root.bar.foregroundAnimationEnabled
-        ColorAnimation { duration: 160 }
-      }
-    }
-
     Item {
       id: scrollClip
       width: Math.min(root.maxLabelWidth, labelText.implicitWidth)
-      height: glyph.height
+      height: labelText.implicitHeight
       clip: true
       anchors.verticalCenter: parent.verticalCenter
       visible: !root.bar.vertical && root.title !== ""
