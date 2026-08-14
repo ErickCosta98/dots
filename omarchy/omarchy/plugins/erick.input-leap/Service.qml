@@ -53,9 +53,17 @@ Item {
   // immediately closed with no further error. This assumes the transport
   // itself is already encrypted (e.g. Tailscale) since Input Leap's own
   // encryption is turned off.
+  //
+  // --use-x11 forces the legacy Xwayland-backed input path. Verified this
+  // Hyprland session's xdg-desktop-portal has no
+  // org.freedesktop.portal.RemoteDesktop implementation — Input Leap's
+  // default (portal-based) backend fails immediately with "No such
+  // interface" without it. Xwayland input injection is a known-limited
+  // fallback (Input Leap itself warns "will not work as expected"); switch
+  // to --use-ei once this session's portal setup supports the EI backend.
   function buildCommand() {
     if (mode === "server") {
-      var serverCmd = ["input-leaps", "--no-daemon", "--disable-crypto", "--config", root.serverTopologyPath]
+      var serverCmd = ["input-leaps", "--no-daemon", "--disable-crypto", "--use-x11", "--config", root.serverTopologyPath]
       if (root.localScreenName) {
         serverCmd.push("--name")
         serverCmd.push(root.localScreenName)
@@ -67,7 +75,11 @@ Item {
       return serverCmd
     }
 
-    var clientCmd = ["input-leapc", "--no-daemon", "--disable-crypto"]
+    var clientCmd = ["input-leapc", "--no-daemon", "--disable-crypto", "--use-x11"]
+    if (root.localScreenName) {
+      clientCmd.push("--name")
+      clientCmd.push(root.localScreenName)
+    }
     clientCmd.push(serverHost)
     return clientCmd
   }
@@ -106,11 +118,9 @@ Item {
     root.state = "starting"
     root.errorMessage = ""
 
-    if (mode === "server") {
-      hostnameProc.running = true
-    } else {
-      root.proceedToBinaryCheck()
-    }
+    // Both modes need the local hostname for --name (client) / the
+    // topology config + --name (server), so resolve it first either way.
+    hostnameProc.running = true
   }
 
   function proceedToBinaryCheck() {
@@ -224,9 +234,10 @@ Item {
     onTriggered: root.saveConfig()
   }
 
-  // Server mode: resolve the local hostname, write the two-screen topology
-  // config, then continue to the binary check — in that order, so the config
-  // file exists on disk before input-leaps is spawned.
+  // Resolve the local hostname for --name (both modes), and in server mode
+  // write the two-screen topology config before continuing to the binary
+  // check — in that order, so the config file exists on disk before
+  // input-leaps is spawned.
   Process {
     id: hostnameProc
     command: ["hostname"]
@@ -234,7 +245,9 @@ Item {
     onExited: function() {
       var local = String(hostnameOut.text || "").trim().split(/\s+/)[0]
       root.localScreenName = local || "local"
-      serverTopologyFile.setText(root.buildServerTopology(root.localScreenName, root.remoteScreenName.trim()))
+      if (root.mode === "server") {
+        serverTopologyFile.setText(root.buildServerTopology(root.localScreenName, root.remoteScreenName.trim()))
+      }
       Qt.callLater(root.proceedToBinaryCheck)
     }
   }

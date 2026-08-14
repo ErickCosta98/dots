@@ -67,11 +67,11 @@ Edit settings from the bar popup, or directly in
 
 ## CLI invocation
 
-- Client: `input-leapc --no-daemon --disable-crypto <serverHost>`
-- Server: `input-leaps --no-daemon --disable-crypto --config <serverTopologyPath> --name <localScreenName> [--address <serverAddress>]`
+- Client: `input-leapc --no-daemon --disable-crypto --use-x11 --name <localScreenName> <serverHost>`
+- Server: `input-leaps --no-daemon --disable-crypto --use-x11 --config <serverTopologyPath> --name <localScreenName> [--address <serverAddress>]`
 
 `--disable-crypto` is always passed: connecting with Input Leap's default
-TLS on failed with `ssl certificate doesn't exist:
+TLS failed with `ssl certificate doesn't exist:
 ~/.config/InputLeap/SSL/InputLeap.pem` (verified against the real binary)
 — nothing here generates that certificate. **Both machines must agree**:
 the other side's Input Leap (GUI or CLI) also needs SSL/encryption
@@ -79,6 +79,19 @@ disabled in its own settings, or the connection opens and is immediately
 closed with no further log line. This assumes the transport itself is
 already encrypted (e.g. a Tailscale link) since Input Leap's own
 encryption is off.
+
+`--use-x11` is always passed: Input Leap's default backend needs the
+`org.freedesktop.portal.RemoteDesktop` xdg-desktop-portal interface, which
+this Hyprland session's portal doesn't implement — it fails immediately
+with `No such interface`. `--use-x11` forces the legacy Xwayland input
+path instead, which Input Leap itself warns is a limited fallback
+("Running against Xwayland. InputLeap will not work as expected"). Switch
+to `--use-ei` in `Service.qml`'s `buildCommand()` once this session's
+portal setup supports the EI backend — not verified as available here.
+`--name <localScreenName>` (the machine's own `hostname` output) is
+passed in both modes so the other side's screen-name matching works:
+whatever screen name the other machine's Input Leap expects for this
+machine must match this laptop's actual hostname.
 
 Both are run with `--no-daemon` so the process stays foreground and attached
 to the QuickShell `Process` — this is required for real lifecycle tracking
@@ -158,6 +171,18 @@ target `input-leap`: `start`, `stop`, `restart`, `status` (JSON), `ping`.
   other doesn't. Since this plugin always passes `--disable-crypto` (see
   **CLI invocation**), disable SSL/encryption on the other machine's
   Input Leap too.
+- **"No such interface" / RemoteDesktop portal error**: this Hyprland
+  session's `xdg-desktop-portal` doesn't implement
+  `org.freedesktop.portal.RemoteDesktop`. The plugin already forces
+  `--use-x11` to route around this — if you still see this error, check
+  that the deployed `Service.qml` actually includes `--use-x11` in
+  `buildCommand()`.
+- **Screen name mismatch**: `--name` is always the output of `hostname`.
+  The other machine's Input Leap config must reference this exact name
+  for this laptop's screen — in server mode, that's the plugin's
+  auto-generated topology; in client mode against a GUI-run server, check
+  what screen name the GUI expects and rename this laptop (or the GUI's
+  entry) to match.
 - **State stuck on "running" and never reaches "connected"**: your Input
   Leap version likely logs a different connection-success phrase — see
   **Known limitations** above.
