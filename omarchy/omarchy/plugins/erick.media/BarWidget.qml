@@ -39,13 +39,21 @@ BarWidget {
 
       Text {
         id: labelText
+        x: 0
         text: root.title + (root.artist ? "  ·  " + root.artist : "")
         color: root.bar.barForeground
         font.family: root.bar.fontFamily
         font.pixelSize: Style.font.body
+        horizontalAlignment: Text.AlignLeft
         anchors.verticalCenter: parent.verticalCenter
 
         property bool needsScroll: implicitWidth > scrollClip.width
+
+        // A track shorter than the previous one can land here mid-scroll:
+        // reset to the left edge instead of leaving a stale negative x that
+        // scrolls the whole label out of the clip.
+        onNeedsScrollChanged: if (!needsScroll) x = 0
+        onTextChanged: if (!needsScroll) x = 0
 
         NumberAnimation on x {
           id: scrollAnim
