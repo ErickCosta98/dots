@@ -89,7 +89,7 @@ Everything else goes through `lan-mouse cli <subcommand>`:
 `lan-mouse cli list` prints one line per configured client, e.g.:
 
 ```
-id 0: 100.127.32.118:24800 (right) active: true, ips: {100.127.32.118}
+id 0: 100.127.32.118:4242 (right) active: true, ips: {100.127.32.118}
 ```
 
 With no daemon reachable it exits 1 with stderr

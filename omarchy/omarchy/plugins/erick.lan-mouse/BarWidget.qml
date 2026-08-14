@@ -209,14 +209,14 @@ BarWidget {
           id: hostnameField
           width: parent.width * 0.6
           placeholderText: "hostname or IP"
-          onTextEdited: root._pendingHostname = text
+          onTextEdited: column._pendingHostname = text
         }
 
         TextField {
           id: portField
           width: parent.width * 0.4 - Style.space(6)
-          placeholderText: "port (24800)"
-          onTextEdited: root._pendingPort = text
+          placeholderText: "port (4242)"
+          onTextEdited: column._pendingPort = text
         }
       }
 

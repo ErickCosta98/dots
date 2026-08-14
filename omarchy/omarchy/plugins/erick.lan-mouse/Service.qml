@@ -198,7 +198,7 @@ Item {
   }
 
   // Parses lines shaped like (verified against 0.11.0):
-  //   id 0: 100.127.32.118:24800 (right) active: true, ips: {100.127.32.118}
+  //   id 0: 100.127.32.118:4242 (right) active: true, ips: {100.127.32.118}
   // This is lan-mouse's plain-text `cli list` output, not a stable
   // machine-readable format — tolerate lines that don't match instead of
   // throwing, and re-check this regex if a future lan-mouse version
